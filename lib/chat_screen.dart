@@ -13,7 +13,7 @@ class ChatScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(title: Text('jk')),
+        appBar: AppBar(title: const Text('jk')),
         body: Stack(
           children: [
             Positioned.fill(
@@ -41,8 +41,11 @@ class ChatScreen extends StatelessWidget {
               hintText: '',
               fillColor: Colors.white,
               filled: true,
+              prefixIcon: IconButton(
+                  onPressed: () => showFileBottomSheet(context),
+                  icon: const Icon(Icons.archive_rounded)),
               suffixIcon: Padding(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 child: IconButton(
                     onPressed: () {
                       if (messagecontroller.text.isNotEmpty) {
@@ -50,17 +53,36 @@ class ChatScreen extends StatelessWidget {
                         messagecontroller.clear();
                       }
                     },
-                    icon: Icon(Icons.send_rounded)),
+                    icon: const Icon(Icons.send_rounded)),
               )),
         ),
       ),
     );
   }
+
+  void showFileBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (c) {
+          return Container(
+            height: 150,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+              AttachmentIconButtom(iconData: Icons.image, onTap: (){}, title: 'Image'),
+              AttachmentIconButtom(iconData: Icons.document_scanner_rounded, onTap: (){}, title: 'Document'),
+              AttachmentIconButtom(iconData: Icons.video_camera_front, onTap: (){}, title: 'Video'),
+              ],
+            ),
+          );
+        });
+  }
 }
 
-
-void send(String message,[MessageType t=MessageType.text]){
-  _socket.sendMessage(MessageModel(name: _name, isSender: true, message: message, type: t));
+void send(String message, [MessageType t = MessageType.text]) {
+  _socket.sendMessage(
+      MessageModel(name: _name, isSender: true, message: message, type: t));
 }
 
 class _TextMessage extends StatelessWidget {
@@ -70,13 +92,13 @@ class _TextMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsetsGeometry.all(8),
+      padding: const EdgeInsetsGeometry.all(8),
       child: Align(
         alignment: messageModel.isSender
             ? Alignment.centerRight
             : Alignment.centerLeft,
         child: Container(
-          padding: EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: messageModel.isSender ? Colors.lime[400] : Colors.white),
@@ -85,12 +107,12 @@ class _TextMessage extends StatelessWidget {
               if (!messageModel.isSender) ...[
                 Text(
                   messageModel.name,
-                  style: TextStyle(color: Colors.black45),
+                  style: const TextStyle(color: Colors.black45),
                 )
               ],
               Text(
                 messageModel.message,
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               )
             ],
           ),
@@ -98,4 +120,30 @@ class _TextMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class AttachmentIconButtom extends StatelessWidget{
+
+
+ AttachmentIconButtom( {super.key,  required this.iconData,required this.onTap,required this.title});
+  
+  String title;
+  Function()? onTap;
+  IconData iconData;
+  @override
+  Widget build(BuildContext context) {
+  return   Padding(
+                  padding: const EdgeInsetsGeometry.all(8),
+                  child: IconButton(
+                      onPressed: onTap,
+                      icon: Column(
+                        children: [
+                          Icon(iconData),
+                          Text(title)
+                        ],
+                      )),
+                );
+  }
+
 }
