@@ -29,7 +29,7 @@ class ChatScreen extends StatelessWidget {
                   return ListView.builder(
                       itemCount: message.length,
                       itemBuilder: (c, i) {
-                        return _TextMessage(messageModel: message[i]);
+                        return getMessageWidget(m: message[i]);
                       });
                 }),
           ],
@@ -70,9 +70,20 @@ class ChatScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-              AttachmentIconButtom(iconData: Icons.image, onTap: (){}, title: 'Image'),
-              AttachmentIconButtom(iconData: Icons.document_scanner_rounded, onTap: (){}, title: 'Document'),
-              AttachmentIconButtom(iconData: Icons.video_camera_front, onTap: (){}, title: 'Video'),
+                AttachmentIconButtom(
+                    iconData: Icons.image,
+                    onTap: () {
+                      send('', MessageType.image);
+                    },
+                    title: 'Image'),
+                AttachmentIconButtom(
+                    iconData: Icons.document_scanner_rounded,
+                    onTap: () {},
+                    title: 'Document'),
+                AttachmentIconButtom(
+                    iconData: Icons.video_camera_front,
+                    onTap: () {},
+                    title: 'Video'),
               ],
             ),
           );
@@ -122,28 +133,61 @@ class _TextMessage extends StatelessWidget {
   }
 }
 
+Widget getMessageWidget({required MessageModel m}) {
+  switch (m.type) {
+    case MessageType.text:
+      return _TextMessage(messageModel: m);
+    case MessageType.video:
+      return const SizedBox();
+    case MessageType.doc:
+      return const SizedBox();
+    case MessageType.image:
+      return  _imageMessageWidget(messageModel: m); 
+  }
+}
 
-class AttachmentIconButtom extends StatelessWidget{
+class _imageMessageWidget extends StatelessWidget {
+final messageModel;
+  _imageMessageWidget({required this.messageModel});
+  @override
+  Widget build(BuildContext context) {
+   return Align(
+    alignment: messageModel.isSender? Alignment.centerRight:Alignment.centerLeft,
+    child: Container(
+      width: MediaQuery.sizeOf(context).width*0.6,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: messageModel.isSender?const Color.fromARGB(255, 240, 249, 161):Colors.white,
 
 
- AttachmentIconButtom( {super.key,  required this.iconData,required this.onTap,required this.title});
-  
+      ),child: Image.network(messageModel.message),
+    ),
+   );
+  }
+}
+
+
+
+class AttachmentIconButtom extends StatelessWidget {
+  AttachmentIconButtom(
+      {super.key,
+      required this.iconData,
+      required this.onTap,
+      required this.title});
+
   String title;
   Function()? onTap;
   IconData iconData;
   @override
   Widget build(BuildContext context) {
-  return   Padding(
-                  padding: const EdgeInsetsGeometry.all(8),
-                  child: IconButton(
-                      onPressed: onTap,
-                      icon: Column(
-                        children: [
-                          Icon(iconData),
-                          Text(title)
-                        ],
-                      )),
-                );
+    return Padding(
+      padding: const EdgeInsetsGeometry.all(8),
+      child: IconButton(
+          onPressed: onTap,
+          icon: Column(
+            children: [Icon(iconData), Text(title)],
+          )),
+    );
   }
-
 }
