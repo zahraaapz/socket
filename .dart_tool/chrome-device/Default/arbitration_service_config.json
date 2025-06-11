@@ -154,6 +154,7 @@
          "cd4688a9-e888-48ea-ad81-76193d56b1be.AutoOpen.PDF": 1,
          "cd4688a9-e888-48ea-ad81-76193d56b1be.AutoOpen.PersistentChat": 1,
          "cd4688a9-e888-48ea-ad81-76193d56b1be.Bubble": 1,
+         "cd4688a9-e888-48ea-ad81-76193d56b1be.IsCompeteAISite.Bubble": 1,
          "cd4688a9-e888-48ea-ad81-76193d56b1be.IsKnowledgeCardQuery.Bubble": 1,
          "cd4688a9-e888-48ea-ad81-76193d56b1be.IsMsnArticleUrlFromNtpP1P2.Bubble": 1,
          "cd4688a9-e888-48ea-ad81-76193d56b1be.IsTextPage.Bubble": 1,
@@ -184,6 +185,6 @@
    },
    "SuppressedExperiences": [  ],
    "TimeDelta": 5000000,
-   "baseConfigVersion": "27.0.0",
-   "configVersion": "27.0.0"
+   "baseConfigVersion": "28.0.0",
+   "configVersion": "28.0.0"
 }
