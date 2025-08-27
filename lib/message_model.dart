@@ -21,7 +21,7 @@ class MessageModel {
       name: json['name'],
       isSender: false,
       message: json['message'],
-      type: json['type'],
+      type: MessageType.values[json['type']],
     );
   }
 
@@ -31,7 +31,7 @@ class MessageModel {
       'dateTime': dateTime.toIso8601String(),
       'isSender': isSender,
       'message': message,
-      'type': type,
+      'type': type.index,
     };
   }
 }

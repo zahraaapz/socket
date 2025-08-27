@@ -18,12 +18,16 @@ class LoginScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 22),
               controller: controller,
               decoration: const InputDecoration(
+                border: InputBorder.none,
                 hintStyle: TextStyle(fontSize: 22),
                 hintText: 'نام خود را وارد کنید',
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.cyan),
+              ),
               onPressed: () {
                 String name = controller.text.trim();
 

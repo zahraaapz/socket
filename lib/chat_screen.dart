@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
 
 import 'message_model.dart';
 
-final _socket = AppSocket();
+final socket = AppSocket();
 
 class ChatScreen extends StatelessWidget {
   final String name;
@@ -23,7 +24,7 @@ class ChatScreen extends StatelessWidget {
               child: Image.asset('images/bg.png', fit: BoxFit.fill),
             ),
             StreamBuilder<List<MessageModel>>(
-              stream: _socket.streamController.stream,
+              stream: socket.streamController.stream,
               builder: (c, s) {
                 var message = s.data ?? [];
                 return ListView.builder(
@@ -98,12 +99,12 @@ class ChatScreen extends StatelessWidget {
             children: [
               AttachmentIconButtom(
                 iconData: Icons.image,
-                onTap: () {
-                  send(
-                    message: 'https://picsum.photos/id/1/200/300',
-                    t: MessageType.image,
-                  );
-                  messageAnim();
+                onTap: () async {
+                  var fileUrl = await pickAndUploadFile();
+                  if (fileUrl != null) {
+                    send(message: fileUrl, t: MessageType.image);
+                    messageAnim();
+                  }
                 },
                 title: 'Image',
               ),
@@ -130,7 +131,7 @@ void send({
   String name = '',
   MessageType t = MessageType.text,
 }) {
-  _socket.sendMessage(
+  socket.sendMessage(
     MessageModel(
       name: name,
       isSender: true,
@@ -159,14 +160,17 @@ class _TextMessage extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: messageModel.isSender ? Colors.lime[400] : Colors.white,
+            color: messageModel.isSender ? Colors.cyanAccent : Colors.white,
           ),
           child: Column(
             children: [
-              if (messageModel.isSender) ...[
+              if (!messageModel.isSender) ...[
                 Text(
                   messageModel.name,
-                  style: const TextStyle(color: Colors.black, fontSize: 20),
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 17, 129, 180),
+                    fontSize: 20,
+                  ),
                 ),
               ],
               Text(
