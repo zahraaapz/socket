@@ -1,5 +1,7 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
 
@@ -92,7 +94,7 @@ class ChatScreen extends StatelessWidget {
       context: context,
       builder: (c) {
         return SizedBox(
-          height: 80,
+          height: MediaQuery.sizeOf(context).height / 7,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -100,22 +102,42 @@ class ChatScreen extends StatelessWidget {
               AttachmentIconButtom(
                 iconData: Icons.image,
                 onTap: () async {
-                  var fileUrl = await pickAndUploadFile();
+                  var fileUrl = await pickAndUploadFile(FileType.image);
                   if (fileUrl != null) {
-                    send(message: fileUrl, t: MessageType.image);
+                    send(message: fileUrl['url'], t: MessageType.image);
                     messageAnim();
                   }
                 },
                 title: 'Image',
               ),
               AttachmentIconButtom(
-                iconData: Icons.document_scanner_rounded,
-                onTap: () {},
+                iconData: Icons.insert_chart,
+                onTap: () async {
+                  var fileUrl = await pickAndUploadFile(FileType.custom);
+                  if (fileUrl['url'] != null) {
+                    send(
+                      message: fileUrl['url'],
+                      t: MessageType.doc,
+                      name: fileUrl['name'],
+                    );
+                    messageAnim();
+                  }
+                },
                 title: 'Document',
               ),
               AttachmentIconButtom(
                 iconData: Icons.video_camera_front,
-                onTap: () {},
+                onTap: () async {
+                  var fileUrl = await pickAndUploadFile(FileType.video);
+                  if (fileUrl['url'] != null) {
+                    send(
+                      message: fileUrl['url'],
+                      t: MessageType.video,
+                      name: fileUrl['name'],
+                    );
+                    messageAnim();
+                  }
+                },
                 title: 'Video',
               ),
             ],
@@ -196,7 +218,7 @@ getMessageWidget({required MessageModel m, required formattedTime}) {
     case MessageType.video:
       return const SizedBox();
     case MessageType.doc:
-      return const SizedBox();
+      return DocumentWidget(formattTime: formattedTime, messageModel: m);
     case MessageType.image:
       return _ImageMessageWidget(messageModel: m, formattedTime: formattedTime);
   }
@@ -224,7 +246,7 @@ class _ImageMessageWidget extends StatelessWidget {
           width: MediaQuery.sizeOf(context).width * 0.6,
           decoration: BoxDecoration(
             image: DecorationImage(
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
               image: Image.network(messageModel.message).image,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -264,6 +286,41 @@ class AttachmentIconButtom extends StatelessWidget {
       child: IconButton(
         onPressed: onTap,
         icon: Column(children: [Icon(iconData), Text(title)]),
+      ),
+    );
+  }
+}
+
+class DocumentWidget extends StatelessWidget {
+  final formattTime;
+  final messageModel;
+  const DocumentWidget({
+    super.key,
+    required this.formattTime,
+    required this.messageModel,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.fromLTRB(
+        messageModel.isSender ? 60 : 8,
+        8,
+        messageModel.isSender ? 8 : 58,
+
+        8,
+      ),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 150, 219, 71),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ListTile(
+        selectedColor: Colors.white,
+        subtitle: Text(formattTime),
+        leading: Icon(Icons.insert_drive_file),
+        title: Text(messageModel.name),
+        onTap: () {
+          OpenFilex.open(messageModel.message);
+        },
       ),
     );
   }
