@@ -15,19 +15,22 @@ class AppSocket {
     String server = '';
 
     if (Platform.isAndroid) {
-      server = 'ws://10.0.2.2:3900';
+      server = 'ws://192.168.1.104:3900';
+
+      //'ws://10.0.2.2:3900';
     } else if (Platform.isIOS) {
       server = 'ws://127.0.0.1:3900';
     }
 
     socket = socket_io.io(
-        server,
-        socket_io.OptionBuilder()
-            .setTransports(['websocket'])
-            .enableReconnection()
-            .enableForceNew()
-            .enableForceNewConnection()
-            .build());
+      server,
+      socket_io.OptionBuilder()
+          .setTransports(['websocket'])
+          .enableReconnection()
+          .enableForceNew()
+          .enableForceNewConnection()
+          .build(),
+    );
 
     socket!.connect();
     socket!.onConnect((v) {

@@ -1,10 +1,12 @@
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
-
 import 'message_model.dart';
 
 final socket = AppSocket();
@@ -19,6 +21,7 @@ class ChatScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(title: const Text('چت')),
         body: Stack(
           children: [
@@ -48,7 +51,7 @@ class ChatScreen extends StatelessWidget {
           ],
         ),
         bottomNavigationBar: TextField(
-          style: TextStyle(fontSize: 20),
+          style: const TextStyle(fontSize: 20),
           controller: messagecontroller,
           textInputAction: TextInputAction.send,
           decoration: InputDecoration(
@@ -107,6 +110,8 @@ class ChatScreen extends StatelessWidget {
                     send(message: fileUrl['url'], t: MessageType.image);
                     messageAnim();
                   }
+                  Navigator.pop(c);
+                  FocusScope.of(c).unfocus();
                 },
                 title: 'Image',
               ),
@@ -122,6 +127,9 @@ class ChatScreen extends StatelessWidget {
                     );
                     messageAnim();
                   }
+
+                  Navigator.pop(c);
+                  FocusScope.of(c).unfocus();
                 },
                 title: 'Document',
               ),
@@ -137,6 +145,7 @@ class ChatScreen extends StatelessWidget {
                     );
                     messageAnim();
                   }
+                  Navigator.pop(c);
                 },
                 title: 'Video',
               ),
@@ -250,7 +259,7 @@ class _ImageMessageWidget extends StatelessWidget {
               image: Image.network(messageModel.message).image,
             ),
             borderRadius: BorderRadius.circular(8),
-            color: messageModel.isSender ? Colors.lime[400] : Colors.white,
+            color: Colors.white,
           ),
           child: Align(
             alignment: AlignmentGeometry.bottomLeft,
@@ -318,8 +327,20 @@ class DocumentWidget extends StatelessWidget {
         subtitle: Text(formattTime),
         leading: Icon(Icons.insert_drive_file),
         title: Text(messageModel.name),
-        onTap: () {
-          OpenFilex.open(messageModel.message);
+        onTap: () async {
+          try {
+            final dir = Directory.systemTemp.path;
+            final filePath = "$dir/${messageModel.name}";
+
+            final response = await http.get(Uri.parse(messageModel.message));
+
+            final file = File(filePath);
+            await file.writeAsBytes(response.bodyBytes);
+
+            await OpenFilex.open(filePath);
+          } catch (e) {
+            print("❌ خطا در دانلود/باز کردن فایل: $e");
+          }
         },
       ),
     );

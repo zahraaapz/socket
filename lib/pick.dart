@@ -13,7 +13,7 @@ Future pickAndUploadFile(FileType type) async {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://10.0.2.2:3900/upload'),
+      Uri.parse('http://192.168.1.104:3900/upload'),
     );
     request.files.add(await http.MultipartFile.fromPath('file', file.path));
 

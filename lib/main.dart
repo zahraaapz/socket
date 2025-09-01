@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'chat_screen.dart';
 import 'login_screen.dart';
 
@@ -13,6 +12,6 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: LoginScreen());
+    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginScreen());
   }
 }
