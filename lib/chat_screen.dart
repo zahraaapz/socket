@@ -1,12 +1,11 @@
-import 'dart:io';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
+import 'package:sokett/widget/docWidget.dart';
+import 'package:sokett/widget/imageWidget.dart';
+import 'package:sokett/widget/textWidget.dart';
 import 'message_model.dart';
 
 final socket = AppSocket();
@@ -19,6 +18,16 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardV = MediaQuery.of(context).viewInsets.bottom;
+    if (keyboardV > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(microseconds: 200),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -28,29 +37,33 @@ class ChatScreen extends StatelessWidget {
             Positioned.fill(
               child: Image.asset('images/bg.png', fit: BoxFit.fill),
             ),
-            StreamBuilder<List<MessageModel>>(
-              stream: socket.streamController.stream,
-              builder: (c, s) {
-                var message = s.data ?? [];
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: message.length,
-                  itemBuilder: (c, i) {
-                    final formattedTime = DateFormat(
-                      'HH:mm',
-                    ).format(message[i].dateTime);
+            Padding(
+              padding: const EdgeInsets.only(bottom: 75),
+              child: StreamBuilder<List<MessageModel>>(
+                stream: socket.streamController.stream,
+                builder: (c, s) {
+                  var message = s.data ?? [];
+                  return ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    controller: _scrollController,
+                    itemCount: message.length,
+                    itemBuilder: (c, i) {
+                      final formattedTime = DateFormat(
+                        'HH:mm',
+                      ).format(message[i].dateTime);
 
-                    return getMessageWidget(
-                      m: message[i],
-                      formattedTime: formattedTime,
-                    );
-                  },
-                );
-              },
+                      return getMessageWidget(
+                        m: message[i],
+                        formattedTime: formattedTime,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
-        bottomNavigationBar: TextField(
+        bottomSheet: TextField(
           style: const TextStyle(fontSize: 20),
           controller: messagecontroller,
           textInputAction: TextInputAction.send,
@@ -60,7 +73,10 @@ class ChatScreen extends StatelessWidget {
             fillColor: Colors.white,
             filled: true,
             prefixIcon: IconButton(
-              onPressed: () => showFileBottomSheet(context),
+              onPressed: () {
+                FocusScope.of(context).unfocus();
+                showFileBottomSheet(context);
+              },
               icon: const Icon(Icons.archive_rounded),
             ),
             suffixIcon: Padding(
@@ -103,7 +119,7 @@ class ChatScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AttachmentIconButtom(
-                iconData: Icons.image,
+                iconData: 'images/image.png',
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.image);
                   if (fileUrl != null) {
@@ -116,7 +132,7 @@ class ChatScreen extends StatelessWidget {
                 title: 'Image',
               ),
               AttachmentIconButtom(
-                iconData: Icons.insert_chart,
+                iconData: 'images/file.png',
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.custom);
                   if (fileUrl['url'] != null) {
@@ -134,7 +150,7 @@ class ChatScreen extends StatelessWidget {
                 title: 'Document',
               ),
               AttachmentIconButtom(
-                iconData: Icons.video_camera_front,
+                iconData: 'images/video.png',
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.video);
                   if (fileUrl['url'] != null) {
@@ -173,107 +189,16 @@ void send({
   );
 }
 
-class _TextMessage extends StatelessWidget {
-  const _TextMessage({required this.messageModel, required this.formattedTime});
-
-  final MessageModel messageModel;
-  final formattedTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsGeometry.all(8),
-      child: Align(
-        alignment: messageModel.isSender
-            ? Alignment.centerRight
-            : Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: messageModel.isSender ? Colors.cyanAccent : Colors.white,
-          ),
-          child: Column(
-            children: [
-              if (!messageModel.isSender) ...[
-                Text(
-                  messageModel.name,
-                  style: const TextStyle(
-                    color: Color.fromARGB(255, 17, 129, 180),
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-              Text(
-                messageModel.message,
-                style: const TextStyle(color: Colors.black, fontSize: 22),
-              ),
-              Text(
-                formattedTime,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 getMessageWidget({required MessageModel m, required formattedTime}) {
   switch (m.type) {
     case MessageType.text:
-      return _TextMessage(messageModel: m, formattedTime: formattedTime);
+      return TextMessage(messageModel: m, formattedTime: formattedTime);
     case MessageType.video:
       return const SizedBox();
     case MessageType.doc:
       return DocumentWidget(formattTime: formattedTime, messageModel: m);
     case MessageType.image:
-      return _ImageMessageWidget(messageModel: m, formattedTime: formattedTime);
-  }
-}
-
-class _ImageMessageWidget extends StatelessWidget {
-  final MessageModel messageModel;
-  const _ImageMessageWidget({
-    required this.messageModel,
-    required this.formattedTime,
-  });
-  final formattedTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Align(
-        alignment: messageModel.isSender
-            ? Alignment.centerRight
-            : Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.all(8.0),
-          height: MediaQuery.sizeOf(context).height * 0.5,
-          width: MediaQuery.sizeOf(context).width * 0.6,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              image: Image.network(messageModel.message).image,
-            ),
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
-          ),
-          child: Align(
-            alignment: AlignmentGeometry.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                formattedTime,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+      return ImageMessageWidget(messageModel: m, formattedTime: formattedTime);
   }
 }
 
@@ -287,61 +212,14 @@ class AttachmentIconButtom extends StatelessWidget {
 
   final String title;
   final Function()? onTap;
-  final IconData iconData;
+  final String iconData;
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsetsGeometry.all(8),
       child: IconButton(
         onPressed: onTap,
-        icon: Column(children: [Icon(iconData), Text(title)]),
-      ),
-    );
-  }
-}
-
-class DocumentWidget extends StatelessWidget {
-  final formattTime;
-  final messageModel;
-  const DocumentWidget({
-    super.key,
-    required this.formattTime,
-    required this.messageModel,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(
-        messageModel.isSender ? 60 : 8,
-        8,
-        messageModel.isSender ? 8 : 58,
-
-        8,
-      ),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 150, 219, 71),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ListTile(
-        selectedColor: Colors.white,
-        subtitle: Text(formattTime),
-        leading: Icon(Icons.insert_drive_file),
-        title: Text(messageModel.name),
-        onTap: () async {
-          try {
-            final dir = Directory.systemTemp.path;
-            final filePath = "$dir/${messageModel.name}";
-
-            final response = await http.get(Uri.parse(messageModel.message));
-
-            final file = File(filePath);
-            await file.writeAsBytes(response.bodyBytes);
-
-            await OpenFilex.open(filePath);
-          } catch (e) {
-            print("❌ خطا در دانلود/باز کردن فایل: $e");
-          }
-        },
+        icon: Column(children: [Image.asset(iconData, scale: 3), Text(title)]),
       ),
     );
   }
