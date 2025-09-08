@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'chat_screen.dart';
-import 'login_screen.dart';
+import 'screen/chat_screen.dart';
+import 'screen/login_screen.dart';
 
 void main() {
   socket.init();

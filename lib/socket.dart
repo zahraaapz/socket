@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
-import 'message_model.dart';
+import 'model/message_model.dart';
 
 class AppSocket {
   socket_io.Socket? socket;

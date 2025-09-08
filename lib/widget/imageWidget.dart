@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sokett/message_model.dart';
+import 'package:sokett/model/message_model.dart';
 
 class ImageMessageWidget extends StatelessWidget {
   final MessageModel messageModel;

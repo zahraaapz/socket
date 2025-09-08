@@ -6,7 +6,7 @@ import 'package:sokett/socket.dart';
 import 'package:sokett/widget/docWidget.dart';
 import 'package:sokett/widget/imageWidget.dart';
 import 'package:sokett/widget/textWidget.dart';
-import 'message_model.dart';
+import '../model/message_model.dart';
 
 final socket = AppSocket();
 
