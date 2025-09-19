@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:sokett/secret.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screen/chat_screen.dart';
 import 'screen/login_screen.dart';
 
-void main() {
-  socket.init();
+void main() async {
+  //socket.init();
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(anonKey: pkey, url: url);
   runApp(const MyApp());
 }
 

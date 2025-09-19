@@ -1,4 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'chat_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -28,12 +32,17 @@ class LoginScreen extends StatelessWidget {
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.all(Colors.cyan),
               ),
-              onPressed: () {
+              onPressed: () async {
                 String name = controller.text.trim();
+                final userId = await login(name);
+                log(userId.toString());
+                if (userId != null) {
+                  if (!context.mounted) return;
 
-                if (name.isNotEmpty) {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (c) => ChatScreen(name: name)),
+                    MaterialPageRoute(
+                      builder: (c) => ChatScreen(name: name, userId: userId),
+                    ),
                   );
                 }
               },
@@ -43,5 +52,25 @@ class LoginScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Future login(String name) async {
+  final client = Supabase.instance.client;
+  final exitUser = await client
+      .from('users')
+      .select('id')
+      .eq('user_name', name)
+      .maybeSingle();
+
+  if (exitUser != null) {
+    return exitUser['id'] as int;
+  } else {
+    final newuser = await client
+        .from('users')
+        .insert({'user_name': name})
+        .select()
+        .single();
+    return newuser['id'] as int;
   }
 }
