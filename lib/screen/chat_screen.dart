@@ -1,23 +1,20 @@
 import 'dart:developer';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
 import 'package:sokett/widget/docWidget.dart';
 import 'package:sokett/widget/imageWidget.dart';
 import 'package:sokett/widget/textWidget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../model/message_model.dart';
 
 final socket = AppSocket();
 
 class ChatScreen extends StatelessWidget {
+  final String contName;
   final String name;
-  final int userId;
-  ChatScreen({super.key, required this.name, required this.userId});
+  ChatScreen({super.key, required this.contName, required this.name});
   final messagecontroller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -36,7 +33,7 @@ class ChatScreen extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        appBar: AppBar(title: const Text('چت')),
+        appBar: AppBar(title: Text(contName)),
         body: Stack(
           children: [
             Positioned.fill(
@@ -44,36 +41,25 @@ class ChatScreen extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 75),
-              child: StreamBuilder<List<Map<String, dynamic>>>(
-                stream: client
-                    .from('messages')
-                    .stream(primaryKey: ['id'])
-                    .order('created_at'),
+              child: StreamBuilder<List<MessageModel>>(
+                stream: socket.streamController.stream,
                 builder: (c, s) {
                   var message = s.data ?? [];
                   log(s.data.toString());
                   return ListView.builder(
-                    reverse: true,
                     physics: const BouncingScrollPhysics(),
                     controller: _scrollController,
                     itemCount: message.length,
                     itemBuilder: (c, i) {
                       final createdAt = DateTime.parse(
-                        message[i]['created_at'],
+                        message[i].dateTime.toString(),
                       );
                       final formattedTime = DateFormat(
                         'HH:mm',
                       ).format(createdAt);
 
-                      final msg = MessageModel(
-                        name: message[i]['sender_id'].toString(),
-                        isSender: message[i]['sender_id'] == userId,
-                        message: message[i]['mess_txt'],
-                        type: MessageType.text,
-                        dateTime: createdAt,
-                      );
                       return getMessageWidget(
-                        m: msg,
+                        m: message[i],
                         formattedTime: formattedTime,
                       );
                     },
@@ -104,9 +90,7 @@ class ChatScreen extends StatelessWidget {
               child: IconButton(
                 onPressed: () {
                   if (messagecontroller.text.isNotEmpty) {
-                    sendMessage(3, userId, messagecontroller.text);
-
-                    //send(message: messagecontroller.text, name: name);
+                    send(message: messagecontroller.text, name: name);
                     messagecontroller.clear();
                     messageAnim();
                   }
@@ -145,7 +129,7 @@ class ChatScreen extends StatelessWidget {
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.image);
                   if (fileUrl != null) {
-                    // send(message: fileUrl['url'], t: MessageType.image);
+                    send(message: fileUrl['url'], t: MessageType.image);
                     messageAnim();
                   }
                   Navigator.pop(c);
@@ -158,11 +142,11 @@ class ChatScreen extends StatelessWidget {
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.custom);
                   if (fileUrl['url'] != null) {
-                    // send(
-                    //   message: fileUrl['url'],
-                    //   t: MessageType.doc,
-                    //   name: fileUrl['name'],
-                    // );
+                    send(
+                      message: fileUrl['url'],
+                      t: MessageType.doc,
+                      name: fileUrl['name'],
+                    );
                     messageAnim();
                   }
 
@@ -176,11 +160,11 @@ class ChatScreen extends StatelessWidget {
                 onTap: () async {
                   var fileUrl = await pickAndUploadFile(FileType.video);
                   if (fileUrl['url'] != null) {
-                    // send(
-                    //   message: fileUrl['url'],
-                    //   t: MessageType.video,
-                    //   name: fileUrl['name'],
-                    // );
+                    send(
+                      message: fileUrl['url'],
+                      t: MessageType.video,
+                      name: fileUrl['name'],
+                    );
                     messageAnim();
                   }
                   Navigator.pop(c);
@@ -245,14 +229,4 @@ class AttachmentIconButtom extends StatelessWidget {
       ),
     );
   }
-}
-
-final client = Supabase.instance.client;
-
-Future sendMessage(int recId, int userId, String txt) async {
-  await client
-      .from('messages')
-      .insert({'sender_id': userId, 'rec_id': recId, 'mess_txt': txt})
-      .select()
-      .single();
 }

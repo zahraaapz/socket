@@ -1,9 +1,8 @@
+import 'dart:convert';
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'chat_screen.dart';
+import 'package:http/http.dart' as http;
+import 'contacts_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   final controller = TextEditingController();
@@ -34,14 +33,11 @@ class LoginScreen extends StatelessWidget {
               ),
               onPressed: () async {
                 String name = controller.text.trim();
-                final userId = await login(name);
-                log(userId.toString());
-                if (userId != null) {
-                  if (!context.mounted) return;
-
+                final list = await getContact();
+                if (name.isNotEmpty) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (c) => ChatScreen(name: name, userId: userId),
+                      builder: (c) => ContactsScreen(cont: list, name: name),
                     ),
                   );
                 }
@@ -55,22 +51,9 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-Future login(String name) async {
-  final client = Supabase.instance.client;
-  final exitUser = await client
-      .from('users')
-      .select('id')
-      .eq('user_name', name)
-      .maybeSingle();
-
-  if (exitUser != null) {
-    return exitUser['id'] as int;
-  } else {
-    final newuser = await client
-        .from('users')
-        .insert({'user_name': name})
-        .select()
-        .single();
-    return newuser['id'] as int;
-  }
+Future<List> getContact() async {
+  final res = await http.get(Uri.parse('http://10.0.2.2:3900/users'));
+  final List users = jsonDecode(res.body);
+  log(users.toString());
+  return users;
 }
