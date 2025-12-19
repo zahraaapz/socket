@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sokett/screen/chat_screen.dart';
 
+// ignore: must_be_immutable
 class ContactsScreen extends StatelessWidget {
   ContactsScreen({super.key, required this.cont, required this.name});
   List cont = [];

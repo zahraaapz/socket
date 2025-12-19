@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:sokett/pick.dart';
 import 'package:sokett/socket.dart';
@@ -11,12 +12,26 @@ import '../model/message_model.dart';
 
 final socket = AppSocket();
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   final String contName;
   final String name;
   ChatScreen({super.key, required this.contName, required this.name});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
   final messagecontroller = TextEditingController();
+
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    messagecontroller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,43 +48,70 @@ class ChatScreen extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        appBar: AppBar(title: Text(contName)),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset('images/bg.png', fit: BoxFit.fill),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 75),
-              child: StreamBuilder<List<MessageModel>>(
-                stream: socket.streamController.stream,
-                builder: (c, s) {
-                  var message = s.data ?? [];
-                  log(s.data.toString());
-                  return ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    controller: _scrollController,
-                    itemCount: message.length,
-                    itemBuilder: (c, i) {
-                      final createdAt = DateTime.parse(
-                        message[i].dateTime.toString(),
-                      );
-                      final formattedTime = DateFormat(
-                        'HH:mm',
-                      ).format(createdAt);
 
-                      return getMessageWidget(
-                        m: message[i],
-                        formattedTime: formattedTime,
-                      );
-                    },
-                  );
-                },
+        body: ClipRect(
+          clipBehavior: Clip.hardEdge,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset('images/bg.png', fit: BoxFit.fill),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(bottom: 75),
+                child: StreamBuilder<List<MessageModel>>(
+                  stream: socket.streamController.stream,
+                  builder: (c, s) {
+                    var message = s.data ?? [];
+                    log(s.data.toString());
+                    messageAnim();
+                    return ListView.builder(
+                      physics: const ClampingScrollPhysics(),
+                      controller: _scrollController,
+                      itemCount: message.length,
+                      itemBuilder: (c, i) {
+                        final createdAt = DateTime.parse(
+                          message[i].dateTime.toString(),
+                        );
+                        final formattedTime = DateFormat(
+                          'HH:mm',
+                        ).format(createdAt);
+
+                        return getMessageWidget(
+                          m: message[i],
+                          formattedTime: formattedTime,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              Container(
+                height: 60,
+                width: 550,
+                color: Colors.white,
+                child: ValueListenableBuilder<StatusType>(
+                  valueListenable: socket.status,
+
+                  builder: (_, status, _) => Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Text(widget.contName),
+                      status == StatusType.online
+                          ? Text('online')
+                          : status == StatusType.offline
+                          ? Text('offline')
+                          : Text('...typing'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         bottomSheet: TextField(
+          onChanged: (value) {
+            socket.sendTyping(value.isNotEmpty);
+          },
           style: const TextStyle(fontSize: 20),
           controller: messagecontroller,
           textInputAction: TextInputAction.send,
@@ -90,9 +132,10 @@ class ChatScreen extends StatelessWidget {
               child: IconButton(
                 onPressed: () {
                   if (messagecontroller.text.isNotEmpty) {
-                    send(message: messagecontroller.text, name: name);
+                    send(message: messagecontroller.text, name: widget.name);
                     messagecontroller.clear();
                     messageAnim();
+                    socket.sendTyping(false);
                   }
                 },
                 icon: const Icon(Icons.send_rounded),
@@ -106,11 +149,15 @@ class ChatScreen extends StatelessWidget {
 
   Future<Null> messageAnim() {
     return Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeIn,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeIn,
+          );
+        }
+      });
     });
   }
 
