@@ -27,9 +27,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void dispose() {
+  dispose() {
     messagecontroller.dispose();
     _scrollController.dispose();
+    socket.dispose();
     super.dispose();
   }
 
@@ -65,6 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     log(s.data.toString());
                     messageAnim();
                     return ListView.builder(
+                      padding: EdgeInsets.only(top: 60),
                       physics: const ClampingScrollPhysics(),
                       controller: _scrollController,
                       itemCount: message.length,
@@ -89,20 +91,38 @@ class _ChatScreenState extends State<ChatScreen> {
                 height: 60,
                 width: 550,
                 color: Colors.white,
-                child: ValueListenableBuilder<StatusType>(
-                  valueListenable: socket.status,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text(widget.contName),
 
-                  builder: (_, status, _) => Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Text(widget.contName),
-                      status == StatusType.online
-                          ? Text('online')
-                          : status == StatusType.offline
-                          ? Text('offline')
-                          : Text('...typing'),
-                    ],
-                  ),
+                    ValueListenableBuilder(
+                      valueListenable: socket.status,
+                      builder: (_, connection, __) {
+                        return ValueListenableBuilder<StatusType>(
+                          valueListenable: socket.status,
+                          builder: (_, status, __) {
+                            if (connection == StatusType.offline) {
+                              return const Text(
+                                ' disconnected ',
+                                style: TextStyle(color: Colors.red),
+                              );
+                            }
+
+                            if (status == StatusType.typing) {
+                              return const Text('...typing');
+                            }
+
+                            if (status == StatusType.offline) {
+                              return const Text('offline');
+                            }
+
+                            return const Text('online');
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
