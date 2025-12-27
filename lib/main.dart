@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screen/chat_screen.dart';
 import 'screen/login_screen.dart';
 
 void main() async {
-  socket.init();
   runApp(const MyApp());
 }
 
